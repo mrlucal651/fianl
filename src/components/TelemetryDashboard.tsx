@@ -288,7 +288,7 @@ const TelemetryDashboard: React.FC = () => {
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Live Vehicle Map</h3>
         <div className="h-96 rounded-lg overflow-hidden">
-          <MapContainer center={[40.7128, -74.006]} zoom={11} style={{ height: '100%', width: '100%' }}>
+          <MapContainer center={[28.6139, 77.2090]} zoom={6} style={{ height: '100%', width: '100%' }}>
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

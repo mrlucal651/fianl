@@ -55,9 +55,11 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onLogout }) => {
     selectedVehicleId: '',
   });
   const [showVehicles, setShowVehicles] = useState(false);
+  const [myBookings, setMyBookings] = useState<any[]>([]);
 
   useEffect(() => {
     fetchAvailableVehicles();
+    fetchMyBookings();
   }, []);
 
   const fetchAvailableVehicles = async () => {
@@ -70,6 +72,16 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onLogout }) => {
       toast.error('Failed to load vehicles');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchMyBookings = async () => {
+    try {
+      const response = await customerAPI.getBookings();
+      setMyBookings(response.data);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+      toast.error('Failed to load bookings');
     }
   };
 
@@ -107,6 +119,7 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onLogout }) => {
 
       await customerAPI.createBooking(bookingData);
       toast.success('Booking created successfully!');
+      await fetchMyBookings();
       setBookingForm({
         pickupLocation: '',
         deliveryLocation: '',
@@ -686,105 +699,74 @@ const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ onLogout }) => {
               </button>
             </div>
 
-            <div className="grid gap-6">
-              {bookings.map((booking) => (
-                <div key={booking.id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <Package className="w-6 h-6 text-purple-600" />
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{booking.id}</h3>
-                        <div className="flex items-center space-x-2">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
-                            {booking.status}
-                          </span>
-                          {booking.aiOptimized && (
-                            <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full flex items-center">
-                              <Zap className="w-3 h-3 mr-1" />
-                              AI Optimized
+            {myBookings.length === 0 ? (
+              <div className="bg-white rounded-2xl p-12 shadow-sm border border-gray-100 text-center">
+                <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No bookings yet</h3>
+                <p className="text-gray-600 mb-4">Create your first booking to get started</p>
+                <button
+                  onClick={handleNewBooking}
+                  className="bg-gradient-to-r from-purple-600 to-teal-600 text-white px-6 py-2 rounded-lg font-medium hover:from-purple-700 hover:to-teal-700 transition-colors"
+                >
+                  Create Booking
+                </button>
+              </div>
+            ) : (
+              <div className="grid gap-6">
+                {myBookings.map((booking) => (
+                  <div key={booking.id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <Package className="w-6 h-6 text-purple-600" />
+                        <div>
+                          <h3 className="font-semibold text-gray-900">{booking.id}</h3>
+                          <div className="flex items-center space-x-2">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
+                              {booking.status}
                             </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-gray-900">{booking.cost}</div>
-                      <div className="text-sm text-gray-500">ETA: {booking.estimatedTime}</div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <div className="text-sm text-gray-600 mb-1">Pickup Location</div>
-                      <div className="font-medium text-gray-900">{booking.pickup}</div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-gray-600 mb-1">Delivery Location</div>
-                      <div className="font-medium text-gray-900">{booking.delivery}</div>
-                    </div>
-                  </div>
-
-                  {booking.status === 'In Transit' && (
-                    <>
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm text-gray-600">Progress</span>
-                          <span className="text-sm font-medium text-gray-900">{booking.progress}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-gradient-to-r from-purple-500 to-teal-500 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${booking.progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-blue-50 rounded-lg p-4 mb-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="text-sm text-blue-800 font-medium">Current Location</div>
-                            <div className="text-blue-700">{booking.currentLocation}</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm text-blue-800 font-medium">Speed</div>
-                            <div className="text-blue-700">{booking.speed}</div>
                           </div>
                         </div>
                       </div>
-                    </>
-                  )}
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-gray-900">₹{booking.price}</div>
+                        <div className="text-sm text-gray-500">Vehicle: {booking.vehicleId}</div>
+                      </div>
+                    </div>
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div>
-                        <div className="text-sm text-gray-600">Driver</div>
-                        <div className="font-medium text-gray-900">{booking.driver}</div>
+                        <div className="text-sm text-gray-600 mb-1">Pickup Location</div>
+                        <div className="font-medium text-gray-900">{booking.pickupLocation}</div>
                       </div>
                       <div>
-                        <div className="text-sm text-gray-600">Vehicle</div>
-                        <div className="font-medium text-gray-900">{booking.vehicle}</div>
+                        <div className="text-sm text-gray-600 mb-1">Delivery Location</div>
+                        <div className="font-medium text-gray-900">{booking.deliveryLocation}</div>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
-                      {booking.status === 'In Transit' && (
-                        <>
-                          <button className="bg-green-100 text-green-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-green-200 transition-colors flex items-center space-x-1">
-                            <Phone className="w-4 h-4" />
-                            <span>Call</span>
-                          </button>
-                          <button className="bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors">
-                            Track Live
-                          </button>
-                        </>
-                      )}
-                      <button className="text-purple-600 hover:text-purple-700 font-medium text-sm">
-                        Details
-                      </button>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-sm text-gray-600 mb-1">Scheduled Pickup</div>
+                        <div className="font-medium text-gray-900">
+                          {new Date(booking.scheduledPickupTime).toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-sm text-gray-600 mb-1">Cargo Weight</div>
+                        <div className="font-medium text-gray-900">{booking.cargoWeight}</div>
+                      </div>
                     </div>
+
+                    {booking.notes && (
+                      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                        <div className="text-sm text-gray-600 mb-1">Notes</div>
+                        <div className="text-sm text-gray-900">{booking.notes}</div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         );
 
